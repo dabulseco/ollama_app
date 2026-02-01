@@ -1,0 +1,13 @@
+{
+  "templates": [
+    {
+      "id": "summarize_function",
+      "name": "Summarize Function",
+      "template": "Summarize this paper providing the main arguments and data it presents and what value and insight this represents",
+      "category": "Research",
+      "requires_input": true,
+      "input_label": "Enter your content:",
+      "description": ""
+    }
+  ]
+}

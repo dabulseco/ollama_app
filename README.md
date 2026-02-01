@@ -1,0 +1,296 @@
+# 🔬 Local LLM Scientific Assistant
+
+A comprehensive Streamlit application for interacting with local Large Language Models (LLMs) via Ollama, designed specifically for scientific and educational use cases.
+
+## ✨ Features
+
+### 📄 Document Upload & Analysis
+- **Upload PDF and DOCX files**: Extract text from research papers, reports, and documents
+- **Multiple file support**: Upload and analyze multiple documents simultaneously
+- **8 Document Analysis Templates**: Specialized templates for summarizing, comparing, and analyzing uploaded documents
+- **Automatic integration**: Document content automatically included in your queries
+- **Preview capability**: View extracted text before querying
+
+### 🎭 Context-Aware Responses
+- **Perspective Setting**: Choose who's writing the response (Scientist, High School Teacher, Lay Person)
+- **Audience Targeting**: Tailor responses for specific audiences (Scientists, College Students, High School Students, Middle School Students, Teachers, Lay Persons)
+- Settings apply to entire conversation for consistent communication style
+
+### 📋 Question Template System
+- **30+ Pre-built Templates**: Comprehensive library of scientific and educational question templates
+- **Organized by Category**: Research, Teaching, Laboratory, Statistics, Critical Thinking, and more
+- **Two Usage Modes**:
+  - **Form Mode**: Structured input with dedicated fields for complex queries
+  - **Chat Mode**: Quick template insertion into chat input
+- **Template Management**: Full CRUD operations - Create, View, Delete custom templates
+- **Persistent Storage**: Templates stored in JSON format for easy backup and sharing
+
+### 💬 Advanced Chat Interface
+- **Conversation History**: Full chat history with context retention (last 5 exchanges)
+- **Export Capabilities**: 
+  - Individual Q&A pairs as standalone HTML documents
+  - Full conversation transcripts with navigation
+  - Bootstrap-styled exports with Markdown table support
+- **Context Indicators**: Exported documents show perspective and audience settings
+
+### ⚙️ Model Configuration
+- **Dynamic Model Selection**: Automatically detects available Ollama models
+- **Fine-tuned Parameters**:
+  - Temperature control (0.0 - 2.0)
+  - Top-K sampling (1 - 100)
+  - Top-P (nucleus) sampling (0.0 - 1.0)
+  - Context window size (256 - 8192 tokens)
+
+## 📁 Project Structure
+
+```
+ollama_app/
+├── app.py                          # Main Streamlit application
+├── requirements.txt                 # Python dependencies
+├── README.md                        # This file
+├── config/
+│   ├── default_templates.json      # Default question templates (30+ templates)
+│   └── question_templates.json     # User's custom templates (auto-created)
+└── utils/
+    ├── template_manager.py         # Template CRUD operations
+    ├── prompt_builder.py           # Dynamic system prompt generation
+    └── html_export.py              # HTML export with Markdown support
+```
+
+## 🚀 Installation
+
+### Prerequisites
+1. **Ollama**: Install from [ollama.ai](https://ollama.ai)
+2. **Python**: Version 3.8 or higher
+
+### Setup Steps
+
+1. **Clone or download this repository**
+```bash
+cd ollama_app
+```
+
+2. **Install Python dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+This will install:
+- Streamlit (UI framework)
+- LangChain (LLM integration)
+- PyPDF2 (PDF text extraction)
+- python-docx (DOCX text extraction)
+- Other supporting libraries
+
+3. **Start Ollama** (in a separate terminal)
+```bash
+ollama serve
+```
+
+4. **Pull at least one model** (if you haven't already)
+```bash
+ollama pull llama2
+# or
+ollama pull mistral
+# or any other model you prefer
+```
+
+5. **Run the application**
+```bash
+streamlit run app.py
+```
+
+The app will open in your browser at `http://localhost:8501`
+
+## 📖 Usage Guide
+
+### Basic Workflow
+
+1. **Set Context** (Sidebar):
+   - Choose your **Perspective** (who's writing)
+   - Choose your **Audience** (who's reading)
+   - Select your preferred **LLM model**
+   - Adjust model parameters if needed
+
+2. **Ask Questions** (Main Page - Chat):
+   - **Option A - Upload Documents**: 
+     - Click "📄 Upload Documents" expander
+     - Upload PDF or DOCX files
+     - Click "Process Documents"
+     - Documents are automatically included in all queries
+   - **Option B - Free Form**: Type directly in the chat input
+   - **Option C - Use Template**: 
+     - Click "📋 Question Templates" expander
+     - Browse by category
+     - Select a template
+     - Choose "Use Template with Form" for structured input, or
+     - Choose "Populate Chat Input" for quick use
+
+3. **Review & Export**:
+   - View conversation history with full responses
+   - Download individual Q&A pairs
+   - Download full conversation transcript
+   - All exports include your perspective/audience settings
+
+### Template Management
+
+Navigate to **Manage Templates** page (sidebar navigation):
+
+#### Viewing Templates
+- Browse all templates organized by category
+- View template details (ID, category, description, template text)
+- Delete templates you don't need
+
+#### Adding Custom Templates
+1. Click "➕ Add Template" tab
+2. Fill in the form:
+   - **Name**: Descriptive name for your template
+   - **Category**: Choose from existing categories or use "Custom"
+   - **Template Text**: The actual question/prompt
+   - **Description**: What this template does (optional but recommended)
+   - **Requires Input**: Check if template needs user content
+   - **Input Label**: Custom label for input field
+3. Click "Add Template"
+
+#### Settings
+- View statistics (total templates, categories)
+- Reset to default templates if needed (⚠️ deletes custom templates)
+
+## 🎯 Use Cases
+
+### For Scientists
+- **Literature Review**: "Summarize Research Paper" template
+- **Method Analysis**: "Explain Research Methods" template
+- **Experimental Design**: Design studies with appropriate controls
+- **Data Analysis**: Statistical guidance and interpretation
+
+### For Educators
+- **Lesson Planning**: Complete lesson plan generation
+- **Concept Explanation**: Multiple difficulty levels via audience setting
+- **Creating Analogies**: Make complex topics accessible
+- **Study Materials**: Generate study guides and review questions
+
+### For Students
+- **Homework Help**: Explain concepts at appropriate level
+- **Exam Preparation**: Create practice questions and study guides
+- **Research Projects**: Hypothesis development and experimental design
+- **Lab Reports**: Protocol design and troubleshooting
+
+## 🔧 Customization
+
+### Adding Your Own Templates
+
+Templates are stored in JSON format. You can:
+
+1. **Use the UI** (recommended): Add templates via "Manage Templates" page
+2. **Edit JSON directly**: Modify `config/question_templates.json`
+
+**JSON Structure:**
+```json
+{
+  "templates": [
+    {
+      "id": "unique_id",
+      "name": "Display Name",
+      "template": "Your question text here",
+      "category": "Research",
+      "requires_input": true,
+      "input_label": "Enter your content:",
+      "description": "What this template does"
+    }
+  ]
+}
+```
+
+### Modifying Perspectives & Audiences
+
+Edit `utils/prompt_builder.py`:
+- Add new perspectives to `PERSPECTIVES` dictionary
+- Add new audiences to `AUDIENCES` dictionary
+- Customize guidance for specific combinations in `_get_specific_guidance()`
+
+## 📊 Model Parameters Explained
+
+| Parameter | Range | Default | Purpose |
+|-----------|-------|---------|---------|
+| **Temperature** | 0.0 - 2.0 | 0.3 | Controls randomness: lower = focused, higher = creative |
+| **Top-K** | 1 - 100 | 40 | Number of highest probability tokens to consider |
+| **Top-P** | 0.0 - 1.0 | 0.9 | Nucleus sampling: cumulative probability threshold |
+| **Context Length** | 256 - 8192 | 2048 | Maximum conversation history size in tokens |
+
+### Recommended Settings
+
+- **Factual Questions**: Temperature 0.1-0.3, Top-K 20-40
+- **Creative Writing**: Temperature 0.7-1.2, Top-K 60-80
+- **General Use**: Default settings work well
+
+## 🐛 Troubleshooting
+
+### "No models available" Error
+- Ensure Ollama is running: `ollama serve`
+- Check if models are installed: `ollama list`
+- Try pulling a model: `ollama pull llama2`
+
+### Templates Not Loading
+- Check if `config/default_templates.json` exists
+- Verify JSON syntax if you edited manually
+- Use "Reset to Defaults" in Template Settings
+
+### Slow Response Times
+- Reduce context length (num_ctx)
+- Use smaller models (e.g., llama2:7b instead of llama2:13b)
+- Reduce conversation history (currently limited to last 5 exchanges)
+
+### Export Issues
+- Ensure you have write permissions in the directory
+- Check browser's download settings
+- Try a different browser if downloads fail
+
+## 💡 Tips & Best Practices
+
+1. **Context Settings**: Set perspective and audience BEFORE starting conversation for consistent responses
+2. **Template Library**: Review all default templates to discover useful patterns
+3. **Custom Templates**: Create templates for repetitive questions you ask frequently
+4. **Export Early**: Download important conversations before clearing history
+5. **Model Selection**: Match model to task (smaller for speed, larger for complex reasoning)
+6. **Parameter Tuning**: Start with defaults, adjust only if needed
+
+## 🔐 Privacy & Data
+
+- **All processing is LOCAL**: No data sent to external servers
+- **Templates stored locally**: JSON files in `config/` directory
+- **No telemetry**: Application doesn't track usage or collect analytics
+- **Export control**: You control all exported HTML files
+
+## 🤝 Contributing
+
+To add new features or improve templates:
+
+1. **Template Contributions**: Share your useful templates via Pull Request to `config/default_templates.json`
+2. **Code Improvements**: Submit PRs with clear documentation
+3. **Bug Reports**: Open issues with reproduction steps
+
+## 📝 License
+
+This project is open source. Feel free to modify and distribute according to your needs.
+
+## 🙏 Acknowledgments
+
+- **Ollama**: For making local LLM deployment accessible
+- **Streamlit**: For the excellent web framework
+- **LangChain**: For LLM orchestration tools
+- **Bootstrap**: For HTML export styling
+
+## 📞 Support
+
+For issues or questions:
+1. Check this README first
+2. Review the troubleshooting section
+3. Check Ollama documentation: [ollama.ai/docs](https://ollama.ai/docs)
+4. Check Streamlit documentation: [docs.streamlit.io](https://docs.streamlit.io)
+
+---
+
+**Version**: 2.0  
+**Last Updated**: February 2026  
+**Author**: Scientific Computing Team
