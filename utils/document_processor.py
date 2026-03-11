@@ -14,11 +14,11 @@ class DocumentProcessor:
     Supports both single file and batch processing.
     """
     
-    # Maximum file size (10 MB)
-    MAX_FILE_SIZE = 10 * 1024 * 1024
+    # Maximum file size (200 MB)
+    MAX_FILE_SIZE = 200 * 1024 * 1024
     
     # Supported file extensions
-    SUPPORTED_EXTENSIONS = {'.pdf', '.docx', '.doc'}
+    SUPPORTED_EXTENSIONS = {'.pdf', '.docx', '.doc', '.pptx'}
     
     @staticmethod
     def is_supported_file(filename: str) -> bool:
@@ -126,6 +126,52 @@ class DocumentProcessor:
             return f"[Error processing DOCX: {str(e)}]"
     
     @staticmethod
+    def extract_text_from_pptx(file_content: bytes) -> str:
+        """
+        Extract text from PPTX file.
+
+        Args:
+            file_content: Binary content of the PPTX file
+
+        Returns:
+            Extracted text as string
+        """
+        try:
+            from pptx import Presentation
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pptx') as tmp_file:
+                tmp_file.write(file_content)
+                tmp_path = tmp_file.name
+
+            try:
+                prs = Presentation(tmp_path)
+                text_parts = []
+
+                for slide_num, slide in enumerate(prs.slides, start=1):
+                    slide_texts = []
+                    for shape in slide.shapes:
+                        if shape.has_text_frame:
+                            for para in shape.text_frame.paragraphs:
+                                text = para.text.strip()
+                                if text:
+                                    slide_texts.append(text)
+                    if slide_texts:
+                        text_parts.append(f"--- Slide {slide_num} ---\n" + "\n".join(slide_texts))
+
+                return "\n\n".join(text_parts) if text_parts else "[No text found in PPTX]"
+
+            finally:
+                try:
+                    os.unlink(tmp_path)
+                except:
+                    pass
+
+        except ImportError:
+            return "[Error: python-pptx not installed. Run: pip install python-pptx]"
+        except Exception as e:
+            return f"[Error processing PPTX: {str(e)}]"
+
+    @staticmethod
     def process_document(uploaded_file) -> Dict[str, str]:
         """
         Process an uploaded document and extract text.
@@ -146,7 +192,7 @@ class DocumentProcessor:
         
         # Check file size
         if uploaded_file.size > DocumentProcessor.MAX_FILE_SIZE:
-            result['error'] = f"File too large ({uploaded_file.size / (1024*1024):.1f} MB). Maximum size is 10 MB."
+            result['error'] = f"File too large ({uploaded_file.size / (1024*1024):.1f} MB). Maximum size is 200 MB."
             return result
         
         # Get file extension
@@ -155,7 +201,7 @@ class DocumentProcessor:
         
         # Check if supported
         if not DocumentProcessor.is_supported_file(uploaded_file.name):
-            result['error'] = f"Unsupported file type: {ext}. Supported types: PDF, DOCX"
+            result['error'] = f"Unsupported file type: {ext}. Supported types: PDF, DOCX, PPTX"
             return result
         
         # Read file content
@@ -171,6 +217,8 @@ class DocumentProcessor:
                 result['content'] = DocumentProcessor.extract_text_from_pdf(file_content)
             elif ext in ['.docx', '.doc']:
                 result['content'] = DocumentProcessor.extract_text_from_docx(file_content)
+            elif ext == '.pptx':
+                result['content'] = DocumentProcessor.extract_text_from_pptx(file_content)
             else:
                 result['error'] = f"Unsupported file type: {ext}"
                 

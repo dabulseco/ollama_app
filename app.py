@@ -9,6 +9,7 @@ Features:
 - Configurable model parameters (temperature, top-k, top-p, context length)
 """
 
+import re
 import streamlit as st
 import requests
 import html
@@ -16,9 +17,9 @@ from typing import List, Tuple, Optional
 
 from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import (
     SystemMessagePromptTemplate,
-    HumanMessagePromptTemplate,
     ChatPromptTemplate,
 )
 
@@ -91,15 +92,51 @@ def generate_ai_response(user_input: str, perspective: str, audience: str,
     # Build conversation history (limit to last 5 exchanges for context window management)
     conversation_history = []
     for past_query, past_response in chat_history[-5:]:
-        conversation_history.append(HumanMessagePromptTemplate.from_template(past_query))
-        conversation_history.append(SystemMessagePromptTemplate.from_template(past_response))
-    
+        conversation_history.append(HumanMessage(content=past_query))
+        conversation_history.append(AIMessage(content=past_response))
+
     # Add current user input
-    conversation_history.append(HumanMessagePromptTemplate.from_template(user_input))
-    
+    conversation_history.append(HumanMessage(content=user_input))
+
     # Create prompt chain and invoke
     prompt_chain = ChatPromptTemplate.from_messages([system_prompt] + conversation_history)
     return (prompt_chain | llm_engine | StrOutputParser()).invoke({})
+
+def generate_followup_questions(user_input: str, ai_response: str, llm_engine) -> List[str]:
+    """
+    Generate 3 suggested follow-up questions based on a Q&A pair.
+
+    Args:
+        user_input: The user's original question
+        ai_response: The AI's response
+        llm_engine: Configured ChatOllama instance
+
+    Returns:
+        List of up to 3 follow-up question strings
+    """
+    prompt = (
+        "Based on the following question and answer, generate exactly 3 insightful "
+        "follow-up questions that would deepen understanding of the topic. "
+        "Return only the 3 questions, one per line, numbered 1. 2. 3. "
+        "Do not include any other text or explanation.\n\n"
+        f"Question: {user_input}\n\n"
+        f"Answer: {ai_response}\n\n"
+        "Follow-up questions:"
+    )
+    try:
+        result = llm_engine.invoke([HumanMessage(content=prompt)])
+        raw = result.content if hasattr(result, "content") else str(result)
+
+        questions = []
+        for line in raw.strip().split("\n"):
+            line = line.strip()
+            cleaned = re.sub(r"^\d+[\.\)]\s*", "", line).strip()
+            if cleaned:
+                questions.append(cleaned)
+
+        return questions[:3]
+    except Exception:
+        return []
 
 # -----------------------------
 # Session State Initialization
@@ -127,6 +164,12 @@ if "document_content" not in st.session_state:
 
 if "allow_llm_knowledge" not in st.session_state:
     st.session_state.allow_llm_knowledge = False  # RAG-first: disabled by default (unchecked)
+
+if "followup_questions" not in st.session_state:
+    st.session_state.followup_questions = {}  # Dict: chat_history index -> List[str]
+
+if "pending_query" not in st.session_state:
+    st.session_state.pending_query = None  # Follow-up question clicked by user
 
 # -----------------------------
 # Navigation
@@ -276,15 +319,15 @@ if page == "Chat":
     # -----------------------------
     # Document Upload Section
     # -----------------------------
-    with st.expander("📄 Upload Documents (PDF, DOCX)", expanded=False):
+    with st.expander("📄 Upload Documents (PDF, DOCX, PPTX)", expanded=False):
         st.markdown("*Upload documents to include their content in your queries*")
-        
+
         # File uploader
         uploaded_files = st.file_uploader(
-            "Choose PDF or DOCX files",
-            type=['pdf', 'docx', 'doc'],
+            "Choose PDF, DOCX, or PPTX files",
+            type=['pdf', 'docx', 'doc', 'pptx'],
             accept_multiple_files=True,
-            help="Upload one or more documents. Maximum 10 MB per file.",
+            help="Upload one or more documents. Maximum 200 MB per file.",
             key="document_uploader"
         )
         
@@ -500,6 +543,10 @@ INSTRUCTIONS: Prioritize information from the document when available. You may s
                                 )
                                 # Store the BASE query
                                 st.session_state.chat_history.append((base_query, response))
+                                # Generate and store follow-up questions for this exchange
+                                followups = generate_followup_questions(base_query, response, llm_engine)
+                                if followups:
+                                    st.session_state.followup_questions[len(st.session_state.chat_history) - 1] = followups
                                 st.session_state.selected_template = None
                                 st.rerun()
                         else:
@@ -522,7 +569,12 @@ INSTRUCTIONS: Prioritize information from the document when available. You may s
         "Type your query here or use a template above...",
         key="main_chat_input"
     )
-    
+
+    # If a follow-up question button was clicked, treat it as the user query
+    if not user_query and st.session_state.pending_query:
+        user_query = st.session_state.pending_query
+        st.session_state.pending_query = None
+
     if user_query:
         if llm_engine:
             # RAG-first enforcement: Check if we can answer
@@ -575,6 +627,10 @@ INSTRUCTIONS: Prioritize information from the document when available. You may s
                     )
                     # Store the ORIGINAL user query
                     st.session_state.chat_history.append((user_query, response))
+                    # Generate and store follow-up questions for this exchange
+                    followups = generate_followup_questions(user_query, response, llm_engine)
+                    if followups:
+                        st.session_state.followup_questions[len(st.session_state.chat_history) - 1] = followups
                     st.rerun()
         else:
             st.error("⚠️ No model selected. Please select a model in the sidebar.")
@@ -624,7 +680,16 @@ INSTRUCTIONS: Prioritize information from the document when available. You may s
             with st.container():
                 st.markdown(f"### 🤖 AI Response")
                 st.markdown(response)
-            
+
+            # Suggested follow-up questions
+            followups = st.session_state.followup_questions.get(i, [])
+            if followups:
+                st.markdown("**💡 Suggested Follow-up Questions:**")
+                for j, fq in enumerate(followups):
+                    if st.button(f"❓ {fq}", key=f"followup-{i}-{j}"):
+                        st.session_state.pending_query = fq
+                        st.rerun()
+
             # Download individual Q&A
             pair_html = build_pair_html(
                 i, query, response,
