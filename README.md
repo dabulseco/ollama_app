@@ -5,8 +5,9 @@ A comprehensive Streamlit application for interacting with local Large Language 
 ## ✨ Features
 
 ### 📄 Document Upload & Analysis
-- **Upload PDF and DOCX files**: Extract text from research papers, reports, and documents
+- **Upload PDF, DOCX, and PPTX files**: Extract text from research papers, reports, documents, and presentations
 - **Multiple file support**: Upload and analyze multiple documents simultaneously
+- **200 MB per file limit**: Support for large documents and presentation files
 - **8 Document Analysis Templates**: Specialized templates for summarizing, comparing, and analyzing uploaded documents
 - **Automatic integration**: Document content automatically included in your queries
 - **Preview capability**: View extracted text before querying
@@ -25,9 +26,15 @@ A comprehensive Streamlit application for interacting with local Large Language 
 - **Template Management**: Full CRUD operations - Create, View, Delete custom templates
 - **Persistent Storage**: Templates stored in JSON format for easy backup and sharing
 
+### 💡 Suggested Follow-up Questions
+- **Automatic generation**: After every AI response, the app generates 3 contextually relevant follow-up questions
+- **One-click submission**: Click any suggested question to instantly submit it as your next query
+- **Full pipeline support**: Clicked follow-up questions go through the same RAG/Hybrid/LLM mode logic as manually typed queries
+- **Per-exchange storage**: Each Q&A pair retains its own set of follow-up suggestions throughout the session
+
 ### 💬 Advanced Chat Interface
 - **Conversation History**: Full chat history with context retention (last 5 exchanges)
-- **Export Capabilities**: 
+- **Export Capabilities**:
   - Individual Q&A pairs as standalone HTML documents
   - Full conversation transcripts with navigation
   - Bootstrap-styled exports with Markdown table support
@@ -54,7 +61,8 @@ ollama_app/
 └── utils/
     ├── template_manager.py         # Template CRUD operations
     ├── prompt_builder.py           # Dynamic system prompt generation
-    └── html_export.py              # HTML export with Markdown support
+    ├── html_export.py              # HTML export with Markdown support
+    └── document_processor.py       # PDF, DOCX, and PPTX text extraction (200 MB limit)
 ```
 
 ## 🚀 Installation
@@ -80,6 +88,7 @@ This will install:
 - LangChain (LLM integration)
 - PyPDF2 (PDF text extraction)
 - python-docx (DOCX text extraction)
+- python-pptx (PPTX text extraction)
 - Other supporting libraries
 
 3. **Start Ollama** (in a separate terminal)
@@ -113,9 +122,9 @@ The app will open in your browser at `http://localhost:8501`
    - Adjust model parameters if needed
 
 2. **Ask Questions** (Main Page - Chat):
-   - **Option A - Upload Documents**: 
+   - **Option A - Upload Documents**:
      - Click "📄 Upload Documents" expander
-     - Upload PDF or DOCX files
+     - Upload PDF, DOCX, or PPTX files (up to 200 MB each)
      - Click "Process Documents"
      - Documents are automatically included in all queries
    - **Option B - Free Form**: Type directly in the chat input
@@ -126,8 +135,9 @@ The app will open in your browser at `http://localhost:8501`
      - Choose "Use Template with Form" for structured input, or
      - Choose "Populate Chat Input" for quick use
 
-3. **Review & Export**:
+3. **Review & Explore**:
    - View conversation history with full responses
+   - Click any of the **💡 Suggested Follow-up Questions** displayed after each answer to instantly deepen the conversation
    - Download individual Q&A pairs
    - Download full conversation transcript
    - All exports include your perspective/audience settings
@@ -249,11 +259,13 @@ Edit `utils/prompt_builder.py`:
 ## 💡 Tips & Best Practices
 
 1. **Context Settings**: Set perspective and audience BEFORE starting conversation for consistent responses
-2. **Template Library**: Review all default templates to discover useful patterns
-3. **Custom Templates**: Create templates for repetitive questions you ask frequently
-4. **Export Early**: Download important conversations before clearing history
-5. **Model Selection**: Match model to task (smaller for speed, larger for complex reasoning)
-6. **Parameter Tuning**: Start with defaults, adjust only if needed
+2. **Follow-up Questions**: Use the suggested follow-up questions to go deeper on any topic without having to type — simply click them
+3. **Template Library**: Review all default templates to discover useful patterns
+4. **Custom Templates**: Create templates for repetitive questions you ask frequently
+5. **Export Early**: Download important conversations before clearing history
+6. **Model Selection**: Match model to task (smaller for speed, larger for complex reasoning)
+7. **Parameter Tuning**: Start with defaults, adjust only if needed
+8. **Large Files**: PPTX and other large documents (up to 200 MB) are now supported — ideal for full slide decks and lengthy reports
 
 ## 🔐 Privacy & Data
 
@@ -291,6 +303,6 @@ For issues or questions:
 
 ---
 
-**Version**: 2.0  
-**Last Updated**: February 2026  
+**Version**: 2.1
+**Last Updated**: March 2026
 **Author**: Scientific Computing Team
