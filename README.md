@@ -8,7 +8,7 @@ A comprehensive Streamlit application for interacting with local Large Language 
 - **Upload PDF, DOCX, and PPTX files**: Extract text from research papers, reports, documents, and presentations
 - **Multiple file support**: Upload and analyze multiple documents simultaneously
 - **200 MB per file limit**: Support for large documents and presentation files
-- **8 Document Analysis Templates**: Specialized templates for summarizing, comparing, and analyzing uploaded documents
+- **8 Document Analysis Templates**: Specialized templates for summarizing, comparing, and analyzing uploaded documents (REMOVED)
 - **Automatic integration**: Document content automatically included in your queries
 - **Preview capability**: View extracted text before querying
 
